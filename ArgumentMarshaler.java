@@ -5,8 +5,7 @@
 // 重構
 
 private abstract class ArgumentMarshaler { 
-  protected boolean booleanValue = false;
-  private boolean stringValue;
+  
   private int integerValue;
   
   
@@ -32,16 +31,37 @@ private abstract class ArgumentMarshaler {
   
   // setString, setInteger 需要 String s
   public abstract void set(String s);
-  
-  public abstract Object get() {
-    return booleanValue;
-  }
+  public abstract Object get();
 }
 
 private class BooleanArgumentMarshaler extends ArgumentMarshaler {
+  private boolean booleanValue = false;
+  
   public void set(String s) {
       booleanValue = true;
   }
+  
+  public Object get() {
+    return booleanValue;
+  }
 }
-private class StringArgumentMarshaler extends ArgumentMarshaler { }
-private class IntegerArgumentMarshaler extends ArgumentMarshaler { }
+private class StringArgumentMarshaler extends ArgumentMarshaler {
+  private String stringValue;
+  
+  public void set(String s) {
+      stringValue = true;
+  }
+  
+  public Object get() {
+    return stringValue;
+  }
+}
+private class IntegerArgumentMarshaler extends ArgumentMarshaler {
+  public void set(String s) {
+      
+  }
+  
+  public Object get() {
+    return null;
+  }
+}

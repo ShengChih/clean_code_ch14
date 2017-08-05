@@ -180,7 +180,7 @@ public class Args {
   private void setStringArg(char argChar) throws ArgsException { 
     currentArgument++;
     try {
-      stringArgs.get(argChar).setString(args[currentArgument]); 
+      stringArgs.get(argChar).set(args[currentArgument]); 
     } catch (ArrayIndexOutOfBoundsException e) {
       valid = false;
       errorArgumentId = argChar;
@@ -252,7 +252,7 @@ public class Args {
   
   public String getString(char arg) { 
     Args.ArgumentMarshaler am = stringArgs.get(arg);
-    return am == null ? "" : am.getString();
+    return am == null ? "" : (String)am.get();
   }
   
   public int getInt(char arg) {
