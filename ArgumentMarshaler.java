@@ -5,7 +5,6 @@
 // 重構
 
 private abstract class ArgumentMarshaler { 
-  // setString, setInteger 需要 String s
   public abstract void set(String s);
   public abstract Object get();
 }

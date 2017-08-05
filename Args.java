@@ -12,10 +12,8 @@ public class Args {
   private String[] args;
   private boolean valid = true;
   private Set<Character> unexpectedArguments = new TreeSet<Character>(); 
-  // 沒有抽象化
-  private Map<Character, ArgumentMarshaler> booleanArgs = new HashMap<Character, ArgumentMarshaler>();
-  private Map<Character, ArgumentMarshaler> stringArgs = new HashMap<Character, ArgumentMarshaler>(); 
-  private Map<Character, ArgumentMarshaler> intArgs = new HashMap<Character, ArgumentMarshaler>(); 
+
+  private Map<Character, ArgumentMarshaler> marshaler = new HashMap<Character, ArgumentMarshaler>();
   
   private Set<Character> argsFound = new HashSet<Character>();
   private int currentArgument;
@@ -88,16 +86,19 @@ public class Args {
   
   // 抽象化 可合併 parseBooleanSchemaElement, parseBooleanSchemaElement, parseStringSchemaElement
   private void parseBooleanSchemaElement(char elementId) { 
-    booleanArgs.put(elementId, new BooleanArgumentMarshaler());
+    ArgumentMarshaler m = new BooleanArgumentMarshaler();
+    marshaler.put(elementId, m);
   }
   
   private void parseIntegerSchemaElement(char elementId) { 
-    intArgs.put(elementId, new IntegerArgumentMarshaler());
+    ArgumentMarshaler m = new IntegerArgumentMarshaler();
+    marshaler.put(elementId, m);
   }
   
   // 合併
   private void parseStringSchemaElement(char elementId) { 
-    stringArgs.put(elementId, new StringArgumentMarshaler());
+    ArgumentMarshaler m = new StringArgumentMarshaler();
+    marshaler.put(elementId, m);
   }
   
   private boolean isStringSchemaElement(String elementTail) { 
@@ -153,7 +154,8 @@ public class Args {
   }
   
   private boolean isIntArg(char argChar) {
-    return intArgs.containsKey(argChar);
+    ArgumentMarshaler m = marshalers.get(argChar);
+    return m instanceof IntegerArgumentMarshaler;
   }
   
   
@@ -190,7 +192,8 @@ public class Args {
   }
   
   private boolean isStringArg(char argChar) { 
-    return stringArgs.containsKey(argChar);
+    ArgumentMarshaler m = marshalers.get(argChar);
+    return m instanceof StringArgumentMarshaler;
   }
   
   private void setBooleanArg(char argChar) { 
@@ -202,7 +205,8 @@ public class Args {
   }
   
   private boolean isBooleanArg(char argChar) { 
-    return booleanArgs.containsKey(argChar);
+    ArgumentMarshaler m = marshalers.get(argChar);
+    return m instanceof BooleanArgumentMarshaler;
   }
   
   public int cardinality() { 
