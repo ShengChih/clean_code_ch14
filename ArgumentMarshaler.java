@@ -6,12 +6,23 @@
 
 private class ArgumentMarshaler { 
   private boolean booleanValue = false;
+  private boolean stringValue;
 
   public void setBoolean(boolean value) { 
     booleanValue = value;
   }
   
-  public boolean getBoolean() {return booleanValue;} 
+  public boolean getBoolean() {
+	  return booleanValue;
+  } 
+  
+  public void setString(String s) { 
+    stringValue = s;
+  }
+  
+  public String getString() {
+	  return stringValue == null ? "" : stringValue;
+  }
 }
 
 private class BooleanArgumentMarshaler extends ArgumentMarshaler { }
