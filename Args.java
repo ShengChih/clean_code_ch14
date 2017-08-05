@@ -141,7 +141,7 @@ public class Args {
   
   private boolean setArgument(char argChar) throws ArgsException { 
     if (isBooleanArg(argChar))
-      setBooleanArg(argChar, true); 
+      setBooleanArg(argChar); 
     else if (isStringArg(argChar))
       setStringArg(argChar); 
     else if (isIntArg(argChar))
@@ -162,12 +162,12 @@ public class Args {
     String parameter = null;
     try {
       parameter = args[currentArgument];
-      intArgs.get(argChar).setInteger(Integer.parseInt(parameter)); 
-    } catch (ArrayIndexOutOfBoundsException e) {
+      intArgs.get(argChar).set(parameter); 
+    } catch (ArgsException e) {
       valid = false;
       errorArgumentId = argChar;
       errorCode = ErrorCode.MISSING_INTEGER;
-      throw new ArgsException();
+      throw e;
     } catch (NumberFormatException e) {
       valid = false;
       errorArgumentId = argChar; 
@@ -193,8 +193,12 @@ public class Args {
     return stringArgs.containsKey(argChar);
   }
   
-  private void setBooleanArg(char argChar, boolean value) { 
-    booleanArgs.get(argChar).set(value);
+  private void setBooleanArg(char argChar) { 
+    try {
+      booleanArgs.get(argChar).set("true");
+    } catch (ArgsException e) {
+      
+    }
   }
   
   private boolean isBooleanArg(char argChar) { 
@@ -257,7 +261,7 @@ public class Args {
   
   public int getInt(char arg) {
     Args.ArgumentMarshaler am = intArgs.get(arg);
-    return am == null ? 0 : am.getInteger();
+    return am == null ? 0 : (Integer)am.get();
   }
   
   public boolean getBoolean(char arg) { 

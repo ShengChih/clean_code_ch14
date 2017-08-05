@@ -5,30 +5,6 @@
 // 重構
 
 private abstract class ArgumentMarshaler { 
-  
-  private int integerValue;
-  
-  
-  public boolean getBoolean() {
-	  return booleanValue;
-  } 
-  
-  public void setString(String s) { 
-    stringValue = s;
-  }
-  
-  public String getString() {
-	  return stringValue == null ? "" : stringValue;
-  }
-  
-  public void setInteger(int i) { 
-    integerValue = i;
-  }
-  
-  public int getInteger() {
-	  return integerValue;
-  }
-  
   // setString, setInteger 需要 String s
   public abstract void set(String s);
   public abstract Object get();
@@ -57,11 +33,17 @@ private class StringArgumentMarshaler extends ArgumentMarshaler {
   }
 }
 private class IntegerArgumentMarshaler extends ArgumentMarshaler {
-  public void set(String s) {
-      
+  private int intValue = 0;
+  
+  public void set(String s) throws ArgsException {
+    try {
+      intValue = Integer.parseInt(s);
+    } catch (NumberFormatException e) {
+      throw new ArgsException();
+    }
   }
   
   public Object get() {
-    return null;
+    return intValue;
   }
 }
