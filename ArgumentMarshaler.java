@@ -7,6 +7,7 @@
 private class ArgumentMarshaler { 
   private boolean booleanValue = false;
   private boolean stringValue;
+  private int integerValue;
 
   public void setBoolean(boolean value) { 
     booleanValue = value;
@@ -22,6 +23,14 @@ private class ArgumentMarshaler {
   
   public String getString() {
 	  return stringValue == null ? "" : stringValue;
+  }
+  
+  public void setInteger(int i) { 
+    integerValue = i;
+  }
+  
+  public int getInteger() {
+	  return integerValue;
   }
 }
 
