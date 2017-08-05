@@ -63,13 +63,13 @@ public class Args {
     validateSchemaElementId(elementId);
 	
 	// isBooleanSchemaElement, isStringSchemaElement, isIntegerSchemaElement 應合併
-	// parseBooleanSchemaElement, parseStringSchemaElement, parseIntegerSchemaElement 應合併
+  // 移除 parseXXXSchemaElement
     if (isBooleanSchemaElement(elementTail)) 
-      parseBooleanSchemaElement(elementId);
+      marshalers.put(elementId, new BooleanArgumentMarshaler());
     else if (isStringSchemaElement(elementTail)) 
-      parseStringSchemaElement(elementId);
+      marshalers.put(elementId, new StringArgumentMarshaler());
     else if (isIntegerSchemaElement(elementTail)) 
-      parseIntegerSchemaElement(elementId);
+      marshalers.put(elementId, new IntegerArgumentMarshaler());
     else
 	  // Exception 應單一職責 統一內容錯誤訊息
       throw new ParseException(String.format("Argument: %c has invalid format: %s.", 
@@ -82,20 +82,6 @@ public class Args {
 	  // Exception 應單一職責 統一內容錯誤訊息
       throw new ParseException("Bad character:" + elementId + "in Args format: " + schema, 0);
     }
-  }
-  
-  // 抽象化 可合併 parseBooleanSchemaElement, parseBooleanSchemaElement, parseStringSchemaElement
-  private void parseBooleanSchemaElement(char elementId) { 
-    marshaler.put(elementId, new BooleanArgumentMarshaler());
-  }
-  
-  private void parseIntegerSchemaElement(char elementId) { 
-    marshaler.put(elementId, new IntegerArgumentMarshaler());
-  }
-  
-  // 合併
-  private void parseStringSchemaElement(char elementId) { 
-    marshaler.put(elementId, new StringArgumentMarshaler());
   }
   
   private boolean isStringSchemaElement(String elementTail) { 
