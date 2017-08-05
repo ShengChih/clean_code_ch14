@@ -4,14 +4,11 @@
 
 // 重構
 
-private class ArgumentMarshaler { 
-  private boolean booleanValue = false;
+private abstract class ArgumentMarshaler { 
+  protected boolean booleanValue = false;
   private boolean stringValue;
   private int integerValue;
-
-  public void setBoolean(boolean value) { 
-    booleanValue = value;
-  }
+  
   
   public boolean getBoolean() {
 	  return booleanValue;
@@ -32,8 +29,19 @@ private class ArgumentMarshaler {
   public int getInteger() {
 	  return integerValue;
   }
+  
+  // setString, setInteger 需要 String s
+  public abstract void set(String s);
+  
+  public abstract Object get() {
+    return booleanValue;
+  }
 }
 
-private class BooleanArgumentMarshaler extends ArgumentMarshaler { }
+private class BooleanArgumentMarshaler extends ArgumentMarshaler {
+  public void set(String s) {
+      booleanValue = true;
+  }
+}
 private class StringArgumentMarshaler extends ArgumentMarshaler { }
 private class IntegerArgumentMarshaler extends ArgumentMarshaler { }

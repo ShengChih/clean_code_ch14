@@ -194,7 +194,7 @@ public class Args {
   }
   
   private void setBooleanArg(char argChar, boolean value) { 
-    booleanArgs.get(argChar).setBoolean(value);
+    booleanArgs.get(argChar).set(value);
   }
   
   private boolean isBooleanArg(char argChar) { 
@@ -262,7 +262,7 @@ public class Args {
   
   public boolean getBoolean(char arg) { 
     Args.ArgumentMarshaler am = booleanArgs.get(arg);
-    return am != null && am.getBoolean();
+    return am != null && (Boolean)am.get();
   }
   
   public boolean has(char arg) { 
