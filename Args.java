@@ -86,19 +86,16 @@ public class Args {
   
   // 抽象化 可合併 parseBooleanSchemaElement, parseBooleanSchemaElement, parseStringSchemaElement
   private void parseBooleanSchemaElement(char elementId) { 
-    ArgumentMarshaler m = new BooleanArgumentMarshaler();
-    marshaler.put(elementId, m);
+    marshaler.put(elementId, new BooleanArgumentMarshaler());
   }
   
   private void parseIntegerSchemaElement(char elementId) { 
-    ArgumentMarshaler m = new IntegerArgumentMarshaler();
-    marshaler.put(elementId, m);
+    marshaler.put(elementId, new IntegerArgumentMarshaler());
   }
   
   // 合併
   private void parseStringSchemaElement(char elementId) { 
-    ArgumentMarshaler m = new StringArgumentMarshaler();
-    marshaler.put(elementId, m);
+    marshaler.put(elementId, new StringArgumentMarshaler());
   }
   
   private boolean isStringSchemaElement(String elementTail) { 
@@ -141,30 +138,32 @@ public class Args {
   }
   
   private boolean setArgument(char argChar) throws ArgsException { 
-    if (isBooleanArg(argChar))
-      setBooleanArg(argChar); 
-    else if (isStringArg(argChar))
-      setStringArg(argChar); 
-    else if (isIntArg(argChar))
-      setIntArg(argChar); 
-    else
-      return false;
-    
+    // 移除 isxxxArg 方法 (1)
+    ArgumentMarshaler m = marshaler.get(argChar);
+    // 使用 Map m 物件 (2)
+    try {
+      if (m instanceof BooleanArgumentMarshaler) // (1)
+        setBooleanArg(m); // (2) 
+      else if (m instanceof StringArgumentMarshaler) // (1)
+        setStringArg(m); // (2)
+      else if (m instanceof IntegerArgumentMarshaler) // (1)
+        setIntArg(m); // (2)
+      else
+        return false;
+    } catch (ArgsException e) {
+      valid = false;
+      errorArgumentId = argChar;
+      throw e;
+    }
     return true; 
   }
   
-  private boolean isIntArg(char argChar) {
-    ArgumentMarshaler m = marshalers.get(argChar);
-    return m instanceof IntegerArgumentMarshaler;
-  }
-  
-  
-  private void setIntArg(char argChar) throws ArgsException { 
+  private void setIntArg(ArgumentMarshaler m) throws ArgsException { 
     currentArgument++;
     String parameter = null;
     try {
       parameter = args[currentArgument];
-      intArgs.get(argChar).set(parameter); 
+      m.set(parameter);  // (2)
     } catch (ArgsException e) {
       valid = false;
       errorArgumentId = argChar;
@@ -179,10 +178,10 @@ public class Args {
     } 
   }
   
-  private void setStringArg(char argChar) throws ArgsException { 
+  private void setStringArg(ArgumentMarshaler m) throws ArgsException { 
     currentArgument++;
     try {
-      stringArgs.get(argChar).set(args[currentArgument]); 
+      m.set(args[currentArgument]); 
     } catch (ArrayIndexOutOfBoundsException e) {
       valid = false;
       errorArgumentId = argChar;
@@ -191,22 +190,12 @@ public class Args {
     } 
   }
   
-  private boolean isStringArg(char argChar) { 
-    ArgumentMarshaler m = marshalers.get(argChar);
-    return m instanceof StringArgumentMarshaler;
-  }
-  
-  private void setBooleanArg(char argChar) { 
+  private void setBooleanArg(ArgumentMarshaler m) { 
     try {
-      booleanArgs.get(argChar).set("true");
+      m.set("true");
     } catch (ArgsException e) {
       
     }
-  }
-  
-  private boolean isBooleanArg(char argChar) { 
-    ArgumentMarshaler m = marshalers.get(argChar);
-    return m instanceof BooleanArgumentMarshaler;
   }
   
   public int cardinality() { 
@@ -259,18 +248,33 @@ public class Args {
   }
   
   public String getString(char arg) { 
-    Args.ArgumentMarshaler am = stringArgs.get(arg);
-    return am == null ? "" : (String)am.get();
+    Args.ArgumentMarshaler am = marsharlers.get(arg);
+    try {
+      return am == null ? "" : (String)am.get();
+    } catch (ClassCastException e) {
+      return "";
+    }
   }
   
   public int getInt(char arg) {
-    Args.ArgumentMarshaler am = intArgs.get(arg);
-    return am == null ? 0 : (Integer)am.get();
+    Args.ArgumentMarshaler am = marsharlers.get(arg);
+    try {
+      return am == null ? 0 : (Integer)am.get();
+    } catch (Exception e) {
+      return 0;
+    }
   }
   
   public boolean getBoolean(char arg) { 
-    Args.ArgumentMarshaler am = booleanArgs.get(arg);
-    return am != null && (Boolean)am.get();
+    Args.ArgumentMarshaler am = marsharlers.get(arg);
+    boolean b = false;
+    // 若 get 的參數不為物件 會 exception
+    try {
+      b = am != null && (Boolean)am.get();
+    } catch (ClassCastException e) {
+      b = false;
+    }
+    return b;
   }
   
   public boolean has(char arg) { 
