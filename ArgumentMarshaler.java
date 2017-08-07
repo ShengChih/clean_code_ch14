@@ -4,7 +4,9 @@
 
 // 重構
 
-private abstract class ArgumentMarshaler { 
+private abstract class ArgumentMarshaler {
+  public abstract void set(Iterator<String> currentArgument)
+                       throws ArgsException;
   public abstract void set(String s);
   public abstract Object get();
 }
@@ -12,8 +14,11 @@ private abstract class ArgumentMarshaler {
 private class BooleanArgumentMarshaler extends ArgumentMarshaler {
   private boolean booleanValue = false;
   
+  public void set(Iterator<String> currentArgument) throws ArgsException {
+    booleanValue = true;
+  }
+  
   public void set(String s) {
-      booleanValue = true;
   }
   
   public Object get() {
@@ -22,6 +27,10 @@ private class BooleanArgumentMarshaler extends ArgumentMarshaler {
 }
 private class StringArgumentMarshaler extends ArgumentMarshaler {
   private String stringValue;
+  
+  public void set(Iterator<String> currentArgument) throws ArgsException {
+
+  }
   
   public void set(String s) {
       stringValue = true;
