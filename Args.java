@@ -9,7 +9,6 @@ public class Args {
   // 一堆變數, 沒有單一職責
   // 變數命名過長
   private String schema;
-  private String[] args;
   private boolean valid = true;
   private Set<Character> unexpectedArguments = new TreeSet<Character>(); 
 
@@ -23,6 +22,8 @@ public class Args {
   private String errorParameter = "TILT";
   private ErrorCode errorCode = ErrorCode.OK;
   
+  private List<String> argsList;
+  
   // 運用 try catch block
   // parse, setIntArg, setStringArg
   
@@ -32,12 +33,12 @@ public class Args {
     
   public Args(String schema, String[] args) throws ParseException { 
     this.schema = schema;
-    this.args = args;
+    argsList = Arrays.asList(args);
     valid = parse();
   }
   
   private boolean parse() throws ParseException { 
-    if (schema.length() == 0 && args.length == 0)
+    if (schema.length() == 0 && argsList.size == 0)
       return true; 
     parseSchema(); 
     try {
@@ -97,8 +98,8 @@ public class Args {
   }
   
   private boolean parseArguments() throws ArgsException {
-    for (currentArgument = 0; currentArgument < args.length; currentArgument++) {
-      String arg = args[currentArgument];
+    for (currentArgument = argsList.iterator(); currentArgument.hasNext()) {
+      String arg = currentArgument.next();
       parseArgument(arg); 
     }
     return true; 
@@ -124,18 +125,17 @@ public class Args {
   }
   
   private boolean setArgument(char argChar) throws ArgsException { 
-    // 移除 isxxxArg 方法 (1)
     ArgumentMarshaler m = marshaler.get(argChar);
-    // 使用 Map m 物件 (2)
+    if (m == null) {
+      return false;
+    }
     try {
-      if (m instanceof BooleanArgumentMarshaler) // (1)
-        setBooleanArg(m); // (2) 
-      else if (m instanceof StringArgumentMarshaler) // (1)
-        setStringArg(m); // (2)
-      else if (m instanceof IntegerArgumentMarshaler) // (1)
-        setIntArg(m); // (2)
-      else
-        return false;
+      if (m instanceof BooleanArgumentMarshaler)
+        setBooleanArg(m);
+      else if (m instanceof StringArgumentMarshaler)
+        setStringArg(m);
+      else if (m instanceof IntegerArgumentMarshaler))
+        setIntArg(m);
     } catch (ArgsException e) {
       valid = false;
       errorArgumentId = argChar;
@@ -144,13 +144,16 @@ public class Args {
     return true; 
   }
   
+  /**
+   *  省略 setXXXArg
+   *
+   */
   private void setIntArg(ArgumentMarshaler m) throws ArgsException { 
-    currentArgument++;
     String parameter = null;
     try {
-      parameter = args[currentArgument];
+      parameter = currentArgument.next();
       m.set(parameter);  // (2)
-    } catch (ArgsException e) {
+    } catch (NoSuchElementException e) {
       valid = false;
       errorArgumentId = argChar;
       errorCode = ErrorCode.MISSING_INTEGER;
@@ -167,8 +170,8 @@ public class Args {
   private void setStringArg(ArgumentMarshaler m) throws ArgsException { 
     currentArgument++;
     try {
-      m.set(args[currentArgument]); 
-    } catch (ArrayIndexOutOfBoundsException e) {
+      m.set(currentArgument.next()); 
+    } catch (NoSuchElementException e) {
       valid = false;
       errorArgumentId = argChar;
       errorCode = ErrorCode.MISSING_STRING; 
