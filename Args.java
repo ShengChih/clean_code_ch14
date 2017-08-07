@@ -62,14 +62,12 @@ public class Args {
     char elementId = element.charAt(0);
     String elementTail = element.substring(1); 
     validateSchemaElementId(elementId);
-	
-	// isBooleanSchemaElement, isStringSchemaElement, isIntegerSchemaElement 應合併
-  // 移除 parseXXXSchemaElement
-    if (isBooleanSchemaElement(elementTail)) 
+    
+    if (elementTail.length() == 0) 
       marshalers.put(elementId, new BooleanArgumentMarshaler());
-    else if (isStringSchemaElement(elementTail)) 
+    else if (elementTail.equals("*")) 
       marshalers.put(elementId, new StringArgumentMarshaler());
-    else if (isIntegerSchemaElement(elementTail)) 
+    else if (elementTail.equals("#")) 
       marshalers.put(elementId, new IntegerArgumentMarshaler());
     else
 	  // Exception 應單一職責 統一內容錯誤訊息
@@ -83,18 +81,6 @@ public class Args {
 	  // Exception 應單一職責 統一內容錯誤訊息
       throw new ParseException("Bad character:" + elementId + "in Args format: " + schema, 0);
     }
-  }
-  
-  private boolean isStringSchemaElement(String elementTail) { 
-    return elementTail.equals("*");
-  }
-  
-  private boolean isBooleanSchemaElement(String elementTail) { 
-    return elementTail.length() == 0;
-  }
-  
-  private boolean isIntegerSchemaElement(String elementTail) { 
-    return elementTail.equals("#");
   }
   
   private boolean parseArguments() throws ArgsException {
