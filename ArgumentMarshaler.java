@@ -1,14 +1,7 @@
-// 由於作者想支援新的型別參數
-// 在粗稿 14-9 需大幅更動多個地方
-// 想將管理參數型態的功能獨立為一個類別，以達到 "新增型別" 方便
-
-// 重構
-
-private abstract class ArgumentMarshaler {
-  public abstract void set(Iterator<String> currentArgument)
+private interface class ArgumentMarshaler {
+  public void set(Iterator<String> currentArgument)
                        throws ArgsException;
-  public abstract void set(String s);
-  public abstract Object get();
+  public Object get();
 }
 
 private class BooleanArgumentMarshaler extends ArgumentMarshaler {
@@ -16,9 +9,6 @@ private class BooleanArgumentMarshaler extends ArgumentMarshaler {
   
   public void set(Iterator<String> currentArgument) throws ArgsException {
     booleanValue = true;
-  }
-  
-  public void set(String s) {
   }
   
   public Object get() {
@@ -38,10 +28,6 @@ private class StringArgumentMarshaler extends ArgumentMarshaler {
     } 
   }
   
-  public void set(String s) {
-      stringValue = true;
-  }
-  
   public Object get() {
     return stringValue;
   }
@@ -54,7 +40,7 @@ private class IntegerArgumentMarshaler extends ArgumentMarshaler {
     String parameter = null;
     try {
       parameter = currentArgument.next();
-      set(parameter);  // (2)
+      intValue = Integer.parseInt(parameter);
     } catch (NoSuchElementException e) {
       errorArgumentId = argChar;
       errorCode = ErrorCode.MISSING_INTEGER;
@@ -63,13 +49,6 @@ private class IntegerArgumentMarshaler extends ArgumentMarshaler {
       errorArgumentId = argChar; 
       errorParameter = parameter;
       errorCode = ErrorCode.INVALID_INTEGER; 
-      throw new ArgsException();
-    }
-  }
-  public void set(String s) throws ArgsException {
-    try {
-      intValue = Integer.parseInt(s);
-    } catch (NumberFormatException e) {
       throw new ArgsException();
     }
   }
