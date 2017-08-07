@@ -28,7 +28,8 @@ public class Args {
   // parse, setIntArg, setStringArg
   
   private enum ErrorCode {
-    OK, MISSING_STRING, MISSING_INTEGER, INVALID_INTEGER, UNEXPECTED_ARGUMENT
+    OK, MISSING_STRING, MISSING_INTEGER, INVALID_INTEGER, UNEXPECTED_ARGUMENT,
+    MISSING_DOUBLE, INVALID_DOUBLE
   }
     
   public Args(String schema, String[] args) throws ParseException { 
@@ -69,6 +70,8 @@ public class Args {
       marshalers.put(elementId, new StringArgumentMarshaler());
     else if (elementTail.equals("#")) 
       marshalers.put(elementId, new IntegerArgumentMarshaler());
+    else if (elementTail.equals("##"))
+      marshalers.put(elementId, new DoubleArgument());
     else
 	  // Exception 應單一職責 統一內容錯誤訊息
       throw new ParseException(String.format("Argument: %c has invalid format: %s.", 
@@ -189,6 +192,15 @@ public class Args {
       return am == null ? 0 : (Integer)am.get();
     } catch (Exception e) {
       return 0;
+    }
+  }
+  
+  public double getDouble(char arg) {
+    Args.ArgumentMarshaler am = marsharlers.get(arg);
+    try {
+      return am == null ? 0 : (Double)am.get();
+    } catch (Exception e) {
+      return 0.0;
     }
   }
   
