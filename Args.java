@@ -1,4 +1,3 @@
-import java.text.ParseException; 
 import java.util.*;
 
 // 混亂程式 是逐漸產生的
@@ -6,8 +5,6 @@ import java.util.*;
 // 經 TDD 測試及驗證 確保 重構後，程式能正確進行
 
 public class Args {
-  // 一堆變數, 沒有單一職責
-  // 變數命名過長
   private String schema;
   private boolean valid = true;
   private Set<Character> unexpectedArguments = new TreeSet<Character>(); 
@@ -18,27 +15,19 @@ public class Args {
   private int currentArgument;
   private char errorArgumentId = '\0';
   
-  // 看不懂 "TILT"
   private String errorParameter = "TILT";
-  private ErrorCode errorCode = ErrorCode.OK;
+  private ArgsException.ErrorCode errorCode = ArgsException.ErrorCode.OK;
   
   private List<String> argsList;
   
-  // 運用 try catch block
-  // parse, setIntArg, setStringArg
-  
-  private enum ErrorCode {
-    OK, MISSING_STRING, MISSING_INTEGER, INVALID_INTEGER, UNEXPECTED_ARGUMENT,
-    MISSING_DOUBLE, INVALID_DOUBLE
-  }
     
-  public Args(String schema, String[] args) throws ParseException { 
+  public Args(String schema, String[] args) throws ArgsException { 
     this.schema = schema;
     argsList = Arrays.asList(args);
     valid = parse();
   }
   
-  private boolean parse() throws ParseException { 
+  private boolean parse() throws ArgsException { 
     if (schema.length() == 0 && argsList.size == 0)
       return true; 
     parseSchema(); 
@@ -49,7 +38,7 @@ public class Args {
     return valid; // default true ?
   }
   
-  private boolean parseSchema() throws ParseException { // 這段僅 多了 String trimmedElement
+  private boolean parseSchema() throws ArgsException {
     for (String element : schema.split(",")) {
       if (element.length() > 0) {
         String trimmedElement = element.trim(); 
@@ -59,7 +48,7 @@ public class Args {
     return true; 
   }
   
-  private void parseSchemaElement(String element) throws ParseException { 
+  private void parseSchemaElement(String element) throws ArgsException { 
     char elementId = element.charAt(0);
     String elementTail = element.substring(1); 
     validateSchemaElementId(elementId);
@@ -73,16 +62,14 @@ public class Args {
     else if (elementTail.equals("##"))
       marshalers.put(elementId, new DoubleArgument());
     else
-	  // Exception 應單一職責 統一內容錯誤訊息
-      throw new ParseException(String.format("Argument: %c has invalid format: %s.", 
+      throw new ArgsException(String.format("Argument: %c has invalid format: %s.", 
         elementId, elementTail), 0);
     } 
   }
     
-  private void validateSchemaElementId(char elementId) throws ParseException { 
+  private void validateSchemaElementId(char elementId) throws ArgsException { 
     if (!Character.isLetter(elementId)) {
-	  // Exception 應單一職責 統一內容錯誤訊息
-      throw new ParseException("Bad character:" + elementId + "in Args format: " + schema, 0);
+      throw new ArgsException("Bad character:" + elementId + "in Args format: " + schema, 0);
     }
   }
   
@@ -137,22 +124,6 @@ public class Args {
       return "-[" + schema + "]"; 
     else
       return ""; 
-  }
-  
-  public String errorMessage() throws Exception { 
-    switch (errorCode) {
-      case OK:
-        throw new Exception("TILT: Should not get here.");
-      case UNEXPECTED_ARGUMENT:
-        return unexpectedArgumentMessage();
-      case MISSING_STRING:
-        return String.format("Could not find string parameter for -%c.", errorArgumentId);
-      case INVALID_INTEGER:
-        return String.format("Argument -%c expects an integer but was '%s'.", errorArgumentId, errorParameter);
-      case MISSING_INTEGER:
-        return String.format("Could not find integer parameter for -%c.", errorArgumentId);
-    }
-    return ""; 
   }
   
   private String unexpectedArgumentMessage() {
