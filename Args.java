@@ -129,54 +129,14 @@ public class Args {
     if (m == null) {
       return false;
     }
-    try { // 
-      if (m instanceof BooleanArgumentMarshaler)
-        m.set(currentArgument);
-      else if (m instanceof StringArgumentMarshaler)
-        setStringArg(m);
-      else if (m instanceof IntegerArgumentMarshaler))
-        setIntArg(m);
+    try {
+      m.set(currentArgument);
     } catch (ArgsException e) {
       valid = false;
       errorArgumentId = argChar;
       throw e;
     }
     return true; 
-  }
-  
-  /**
-   *  省略 setXXXArg
-   *
-   */
-  private void setIntArg(ArgumentMarshaler m) throws ArgsException { 
-    String parameter = null;
-    try {
-      parameter = currentArgument.next();
-      m.set(parameter);  // (2)
-    } catch (NoSuchElementException e) {
-      valid = false;
-      errorArgumentId = argChar;
-      errorCode = ErrorCode.MISSING_INTEGER;
-      throw e;
-    } catch (NumberFormatException e) {
-      valid = false;
-      errorArgumentId = argChar; 
-      errorParameter = parameter;
-      errorCode = ErrorCode.INVALID_INTEGER; 
-      throw new ArgsException();
-    } 
-  }
-  
-  private void setStringArg(ArgumentMarshaler m) throws ArgsException { 
-    currentArgument++;
-    try {
-      m.set(currentArgument.next()); 
-    } catch (NoSuchElementException e) {
-      valid = false;
-      errorArgumentId = argChar;
-      errorCode = ErrorCode.MISSING_STRING; 
-      throw new ArgsException();
-    } 
   }
   
   public int cardinality() { 

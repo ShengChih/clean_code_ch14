@@ -29,7 +29,13 @@ private class StringArgumentMarshaler extends ArgumentMarshaler {
   private String stringValue;
   
   public void set(Iterator<String> currentArgument) throws ArgsException {
-
+    try {
+      stringValue = currentArgument.next(); 
+    } catch (NoSuchElementException e) {
+      errorArgumentId = argChar;
+      errorCode = ErrorCode.MISSING_STRING; 
+      throw new ArgsException();
+    } 
   }
   
   public void set(String s) {
@@ -42,7 +48,24 @@ private class StringArgumentMarshaler extends ArgumentMarshaler {
 }
 private class IntegerArgumentMarshaler extends ArgumentMarshaler {
   private int intValue = 0;
+
   
+  public void set(Iterator<String> currentArgument) throws ArgsException {
+    String parameter = null;
+    try {
+      parameter = currentArgument.next();
+      set(parameter);  // (2)
+    } catch (NoSuchElementException e) {
+      errorArgumentId = argChar;
+      errorCode = ErrorCode.MISSING_INTEGER;
+      throw e;
+    } catch (NumberFormatException e) {
+      errorArgumentId = argChar; 
+      errorParameter = parameter;
+      errorCode = ErrorCode.INVALID_INTEGER; 
+      throw new ArgsException();
+    }
+  }
   public void set(String s) throws ArgsException {
     try {
       intValue = Integer.parseInt(s);
