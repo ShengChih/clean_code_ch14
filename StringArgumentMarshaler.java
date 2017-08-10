@@ -1,17 +1,20 @@
-private class StringArgumentMarshaler extends ArgumentMarshaler {
-  private String stringValue;
+import static com.objectmentor.utilities.args.ArgsException.ErrorCode.*;
+
+public class StringArgumentMarshaler implements ArgumentMarshaler { 
+  private String stringValue = "";
   
-  public void set(Iterator<String> currentArgument) throws ArgsException {
+  public void set(Iterator<String> currentArgument) throws ArgsException { 
     try {
-      stringValue = currentArgument.next(); 
+      stringValue = currentArgument.next(); // 下一位
     } catch (NoSuchElementException e) {
-      errorArgumentId = argChar;
-      errorCode = ErrorCode.MISSING_STRING; 
-      throw new ArgsException();
-    } 
+      throw new ArgsException(MISSING_STRING); 
+    }
   }
   
-  public Object get() {
-    return stringValue;
+  public static String getValue(ArgumentMarshaler am) {
+    if (am != null && am instanceof StringArgumentMarshaler)
+      return ((StringArgumentMarshaler) am).stringValue; 
+    else
+      return ""; 
   }
 }

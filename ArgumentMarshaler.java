@@ -1,5 +1,3 @@
-private interface class ArgumentMarshaler {
-  public void set(Iterator<String> currentArgument)
-                       throws ArgsException;
-  public Object get();
+public interface ArgumentMarshaler {
+  void set(Iterator<String> currentArgument) throws ArgsException;
 }

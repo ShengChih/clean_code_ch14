@@ -1,23 +1,24 @@
-private class IntegerArgumentMarshaler extends ArgumentMarshaler {
-  private int intValue = 0;
+import static com.objectmentor.utilities.args.ArgsException.ErrorCode.*;
 
+public class IntegerArgumentMarshaler implements ArgumentMarshaler { 
+  private int intValue = 0;
   
-  public void set(Iterator<String> currentArgument) throws ArgsException {
+  public void set(Iterator<String> currentArgument) throws ArgsException { 
     String parameter = null;
     try {
       parameter = currentArgument.next();
       intValue = Integer.parseInt(parameter);
     } catch (NoSuchElementException e) {
-      errorCode = ErrorCode.MISSING_INTEGER;
-      throw new ArgsException();
+      throw new ArgsException(MISSING_INTEGER);
     } catch (NumberFormatException e) {
-      errorParameter = parameter;
-      errorCode = ErrorCode.INVALID_INTEGER; 
-      throw new ArgsException();
+      throw new ArgsException(INVALID_INTEGER, parameter); 
     }
   }
   
-  public Object get() {
-    return intValue;
+  public static int getValue(ArgumentMarshaler am) {
+    if (am != null && am instanceof IntegerArgumentMarshaler)
+      return ((IntegerArgumentMarshaler) am).intValue; 
+    else
+    return 0; 
   }
 }

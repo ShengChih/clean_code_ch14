@@ -1,200 +1,174 @@
+package com.objectmentor.utilities.args;
+
+import static com.objectmentor.utilities.args.ArgsException.ErrorCode.*; 
 import java.util.*;
 
-// 混亂程式 是逐漸產生的
-// 重構 => 漸進整理程式碼
-// 經 TDD 測試及驗證 確保 重構後，程式能正確進行
-
 public class Args {
-  private String schema;
-  private boolean valid = true;
-  private Set<Character> unexpectedArguments = new TreeSet<Character>(); 
-
-  private Map<Character, ArgumentMarshaler> marshaler = new HashMap<Character, ArgumentMarshaler>();
+  /**
+   *  @params Map<Character, ArgumentMarshaler> marshalers 放置類別實例
+   *	ArgumentMarshaler (interface)
+   *	ArgumentMarshaler bool_args = new BooleanArgumentMarshaler();
+   * 	ArgumentMarshaler int_args = new IntegerArgumentMarshaler();
+   *	...
+   *    marshalers.put("l", bool_args);
+   *	marshalers.put("p", int_args);
+   *	...
+   *  @params Set<Character> argsFound 符合 schema 定義規則的參數
+   *
+   *
+   */
+  private Map<Character, ArgumentMarshaler> marshalers;
+  private Set<Character> argsFound;
+  private ListIterator<String> currentArgument;
   
-  private Set<Character> argsFound = new HashSet<Character>();
-  private int currentArgument;
-  private char errorArgumentId = '\0';
-  
-  private String errorParameter = "TILT";
-  private ArgsException.ErrorCode errorCode = ArgsException.ErrorCode.OK;
-  
-  private List<String> argsList;
-  
+  /**
+   *  @params String schema "l,p#,d*" => { -l: boolean, -p: integer, -d: string}
+   *  @params String[] args (java main.java -l true -p 10 -d string_args) => e.g. args[] = ["-l", "true", "-p", "10", "-d", "string_args"]
+   *
+   */
+  public Args(String schema, String[] args) throws ArgsException {
+	// 初始化
+    marshalers = new HashMap<Character, ArgumentMarshaler>(); 
+    argsFound = new HashSet<Character>();
     
-  public Args(String schema, String[] args) throws ArgsException { 
-    this.schema = schema;
-    argsList = Arrays.asList(args);
-    valid = parse();
+	// 定義規則初始化
+    parseSchema(schema);
+	// 
+    parseArgumentStrings(Arrays.asList(args)); // Arrays static function 元素轉 List (array args => list)
   }
   
-  private boolean parse() throws ArgsException { 
-    if (schema.length() == 0 && argsList.size == 0)
-      return true; 
-    parseSchema(); 
-    try {
-      parseArguments();
-    } catch (ArgsException e) {
-    }
-    return valid; // default true ?
-  }
-  
-  private boolean parseSchema() throws ArgsException {
+  /**
+   *  以","分割字串，根據 schema 定義型態初始化 marshalers
+   *  @params String schema "l,p#,d*"
+   */
+  private void parseSchema(String schema) throws ArgsException { 
     for (String element : schema.split(",")) {
-      if (element.length() > 0) {
-        String trimmedElement = element.trim(); 
-        parseSchemaElement(trimmedElement);
-      } 
-    }
-    return true; 
+      if (element.length() > 0) { 
+        parseSchemaElement(element.trim()); // ["l", "p#", "d*"]
+	  }
+	}
   }
   
+  /**
+   *  根據 schema 決定 new 什麼 instance 至 marshalers (類似工廠模式)
+   *  @params String element => ["l", "p#", "d*"]
+   */
   private void parseSchemaElement(String element) throws ArgsException { 
-    char elementId = element.charAt(0);
-    String elementTail = element.substring(1); 
-    validateSchemaElementId(elementId);
-    
-    if (elementTail.length() == 0) 
+    char elementId = element.charAt(0); // ["l", "p#", "d*"] => [l, p, d]
+    String elementTail = element.substring(1); //["l", "p#", "d*"] => ["", "#", "*"]
+	
+	validateSchemaElementId(elementId);
+	
+    if (elementTail.length() == 0)
       marshalers.put(elementId, new BooleanArgumentMarshaler());
     else if (elementTail.equals("*")) 
       marshalers.put(elementId, new StringArgumentMarshaler());
-    else if (elementTail.equals("#")) 
+    else if (elementTail.equals("#"))
       marshalers.put(elementId, new IntegerArgumentMarshaler());
-    else if (elementTail.equals("##"))
-      marshalers.put(elementId, new DoubleArgument());
+    else if (elementTail.equals("##")) 
+      marshalers.put(elementId, new DoubleArgumentMarshaler());
+    else if (elementTail.equals("[*]"))
+      marshalers.put(elementId, new StringArrayArgumentMarshaler());
     else
-      throw new ArgsException(String.format("Argument: %c has invalid format: %s.", 
-        elementId, elementTail), 0);
+      throw new ArgsException(INVALID_ARGUMENT_FORMAT, elementId, elementTail);
+  }
+  
+  /**
+   *  判斷是否為字母
+   *  @params char elementId => e.g. [l, p, d]
+   */
+  private void validateSchemaElementId(char elementId) throws ArgsException { 
+    if (!Character.isLetter(elementId))
+      throw new ArgsException(INVALID_ARGUMENT_NAME, elementId, null); 
+  }
+  
+  /**
+   *  處理 args[] 變數
+   *  @params List<String> argsList => e.g. "-l" -> "true" -> "-p" -> "10" -> "-d" "string_args"
+   *
+   */
+  private void parseArgumentStrings(List<String> argsList) throws ArgsException {
+    for (currentArgument = argsList.listIterator(); currentArgument.hasNext();) {
+      String argString = currentArgument.next(); 
+      if (argString.startsWith("-")) { // 是否 "-" 作為起始字串
+        parseArgumentCharacters(argString.substring(1)); // "l" -> '"p" -> "d"
+      } else {
+        currentArgument.previous(); //  "true" -> "10" -> "string_args" 會 skip
+        break; 
+      }
     } 
   }
-    
-  private void validateSchemaElementId(char elementId) throws ArgsException { 
-    if (!Character.isLetter(elementId)) {
-      throw new ArgsException("Bad character:" + elementId + "in Args format: " + schema, 0);
-    }
+  
+  /**
+   *
+   *  @params String argChars e.g. "l" -> '"p" -> "d"
+   *
+   */
+  private void parseArgumentCharacters(String argChars) throws ArgsException { 
+    for (int i = 0; i < argChars.length(); i++)
+      parseArgumentCharacter(argChars.charAt(i)); 
   }
   
-  private boolean parseArguments() throws ArgsException {
-    for (currentArgument = argsList.iterator(); currentArgument.hasNext()) {
-      String arg = currentArgument.next();
-      parseArgument(arg); 
-    }
-    return true; 
-  }
-  
-  private void parseArgument(String arg) throws ArgsException { 
-    if (arg.startsWith("-"))
-      parseElements(arg); 
-  }
-  
-  private void parseElements(String arg) throws ArgsException { 
-    for (int i = 1; i < arg.length(); i++)
-      parseElement(arg.charAt(i)); 
-  }
-  
-  private void parseElement(char argChar) throws ArgsException { 
-    if (setArgument(argChar))
-      argsFound.add(argChar); 
-    else 
-      unexpectedArguments.add(argChar); 
-      errorCode = ErrorCode.UNEXPECTED_ARGUMENT; 
-      valid = false;
-  }
-  
-  private boolean setArgument(char argChar) throws ArgsException { 
-    ArgumentMarshaler m = marshaler.get(argChar);
+  /**
+   *
+   *  @params argChar "l" -> "p" -> "d"
+   *
+   */
+  private void parseArgumentCharacter(char argChar) throws ArgsException { 
+    ArgumentMarshaler m = marshalers.get(argChar); // 取出對應的實例 bool, int, string
     if (m == null) {
-      return false;
-    }
-    try {
-      m.set(currentArgument);
-    } catch (ArgsException e) {
-      valid = false;
-      errorArgumentId = argChar;
-      throw e;
-    }
-    return true; 
+      throw new ArgsException(UNEXPECTED_ARGUMENT, argChar, null); 
+    } else {
+      argsFound.add(argChar); // match 放入 <Set> argsFound
+      try {
+        m.set(currentArgument);
+		// 實作 interface ArgumentMarshaler.set; 傳物件 currentArgument 進去做操作 => 相依性注入(Dependency Injection) 去耦合
+      } catch (ArgsException e) {
+        e.setErrorArgumentId(argChar);
+        throw e; 
+      }
+    } 
   }
   
-  public int cardinality() { 
-    return argsFound.size();
-  }
-  
-  public String usage() { 
-    if (schema.length() > 0)
-      return "-[" + schema + "]"; 
-    else
-      return ""; 
-  }
-  
-  private String unexpectedArgumentMessage() {
-    StringBuffer message = new StringBuffer("Argument(s) -"); 
-    for (char c : unexpectedArguments) {
-      message.append(c); 
-    }
-    message.append(" unexpected.");
-    
-    return message.toString(); 
-  }
-  
-  private boolean falseIfNull(Boolean b) { 
-    return b != null && b;
-  }
-  
-  private int zeroIfNull(Integer i) { 
-    return i == null ? 0 : i;
-  }
-  
-  private String blankIfNull(String s) { 
-    return s == null ? "" : s;
-  }
-  
-  public String getString(char arg) { 
-    Args.ArgumentMarshaler am = marsharlers.get(arg);
-    try {
-      return am == null ? "" : (String)am.get();
-    } catch (ClassCastException e) {
-      return "";
-    }
-  }
-  
-  public int getInt(char arg) {
-    Args.ArgumentMarshaler am = marsharlers.get(arg);
-    try {
-      return am == null ? 0 : (Integer)am.get();
-    } catch (Exception e) {
-      return 0;
-    }
-  }
-  
-  public double getDouble(char arg) {
-    Args.ArgumentMarshaler am = marsharlers.get(arg);
-    try {
-      return am == null ? 0 : (Double)am.get();
-    } catch (Exception e) {
-      return 0.0;
-    }
-  }
-  
-  public boolean getBoolean(char arg) { 
-    Args.ArgumentMarshaler am = marsharlers.get(arg);
-    boolean b = false;
-    // 若 get 的參數不為物件 會 exception
-    try {
-      b = am != null && (Boolean)am.get();
-    } catch (ClassCastException e) {
-      b = false;
-    }
-    return b;
-  }
-  
+  /**
+   *  檢查 Set 是否有用到參數 arg
+   *  @params arg
+   *  @return boolean
+   */
   public boolean has(char arg) { 
     return argsFound.contains(arg);
   }
   
-  public boolean isValid() { 
-    return valid;
+  /**
+   *  下一位
+   */
+  public int nextArgument() {
+    return currentArgument.nextIndex();
   }
   
-  private class ArgsException extends Exception {
+  /**
+   *  轉型用 => 由於  marshalers.get(arg) 得到的物件都會是 ArgumentMarshaler
+   *  BooleanArgumentMarshaler.getValue 會強制將marshalers.get(arg) ArgumentMarshaler 轉型為 BooleanArgumentMarshaler, 並操作
+   *  @parms Char arg => e.g. "l", "d", "p"
+   *  @return Boolean
+   */
+  public boolean getBoolean(char arg) {
+    return BooleanArgumentMarshaler.getValue(marshalers.get(arg));
+  }
+  
+  public String getString(char arg) {
+    return StringArgumentMarshaler.getValue(marshalers.get(arg));
+  }
+  
+  public int getInt(char arg) {
+    return IntegerArgumentMarshaler.getValue(marshalers.get(arg));
+  }
+  
+  public double getDouble(char arg) {
+    return DoubleArgumentMarshaler.getValue(marshalers.get(arg));
+  }
+  
+  public String[] getStringArray(char arg) {
+    return StringArrayArgumentMarshaler.getValue(marshalers.get(arg));
   } 
 }
