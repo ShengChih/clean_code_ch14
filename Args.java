@@ -45,8 +45,8 @@ public class Args {
     for (String element : schema.split(",")) {
       if (element.length() > 0) { 
         parseSchemaElement(element.trim()); // ["l", "p#", "d*"]
-	  }
-	}
+	    }
+    }
   }
   
   /**
@@ -84,16 +84,16 @@ public class Args {
   
   /**
    *  處理 args[] 變數
-   *  @params List<String> argsList => e.g. "-l" -> "true" -> "-p" -> "10" -> "-d" "string_args"
+   *  @params List<String> argsList => e.g. "-l" -> "true" -> "-p" -> "10" -> "-d" -> "string_args"
    *
    */
   private void parseArgumentStrings(List<String> argsList) throws ArgsException {
     for (currentArgument = argsList.listIterator(); currentArgument.hasNext();) {
       String argString = currentArgument.next(); 
       if (argString.startsWith("-")) { // 是否 "-" 作為起始字串
-        parseArgumentCharacters(argString.substring(1)); // "l" -> '"p" -> "d"
+        parseArgumentCharacters(argString.substring(1)); // "l" -> "p" -> "d"
       } else {
-        currentArgument.previous(); //  "true" -> "10" -> "string_args" 會 skip
+        currentArgument.previous(); // 非 - 表示 參數錯誤, 不處理之後的參數
         break; 
       }
     } 
@@ -121,8 +121,9 @@ public class Args {
     } else {
       argsFound.add(argChar); // match 放入 <Set> argsFound
       try {
-        m.set(currentArgument);
-		// 實作 interface ArgumentMarshaler.set; 傳物件 currentArgument 進去做操作 => 相依性注入(Dependency Injection) 去耦合
+        m.set(currentArgument); // 讀取後頭的參數
+		    // 實作 interface ArgumentMarshaler.set; 傳物件 currentArgument 進去做操作 => 相依性注入(Dependency Injection) 去耦合
+        // 減少多個參數
       } catch (ArgsException e) {
         e.setErrorArgumentId(argChar);
         throw e; 
